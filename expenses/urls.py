@@ -5,6 +5,7 @@ from .views import PaymentMethodViewSet
 from .views import IncomeTypeAPI
 from .views import ExpenseAPI
 from .views import ExpenseSummaryAPI
+from .views import CategoryBudgetAPI
 
 
 router = DefaultRouter()
@@ -17,6 +18,8 @@ urlpatterns = [
     path("expense/", ExpenseAPI.as_view(), name="expense"),
     path("expense/<int:id>/", ExpenseAPI.as_view(), name="expense_detail"),
     path("expense-summary/", ExpenseSummaryAPI.as_view(), name="expense-summary"),
+    path("category-budget/", CategoryBudgetAPI.as_view()),
+    path("category-budget/<int:id>/", CategoryBudgetAPI.as_view()),
 ]
 
 urlpatterns += router.urls

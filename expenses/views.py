@@ -7,10 +7,12 @@ from .models import Category
 from .models import PaymentMethod
 from .models import IncomeType
 from .models import Expense
+from .models import CategoryBudget
 from .serializers import CategorySerializer
 from .serializers import PaymentMethodSerializer
 from .serializers import IncomeTypeSerializer
 from .serializers import ExpenseSerializer
+from .serializers import CategoryBudgetSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
@@ -186,3 +188,96 @@ class ExpenseSummaryAPI(APIView):
             "lowest_category": lowest_category,
             "graph_data": graph_data
         })
+    
+
+from datetime import date
+
+class CategoryBudgetAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        today = date.today()
+
+        budgets = CategoryBudget.objects.filter(
+            user=user,
+            month=today.month,
+            year=today.year
+        )
+
+        result = []
+
+        for budget in budgets:
+            spent = Expense.objects.filter(
+                user=user,
+                category=budget.category,
+                transaction_type="Expense",
+                date__month=today.month,
+                date__year=today.year
+            ).aggregate(total=Sum("amount"))["total"] or 0
+
+            spent = spent or 0
+            limit = budget.monthly_limit
+
+            # Remaining should not go below 0
+
+            remaining = max(limit - spent, 0)
+
+            # Percent used should not exceed 100
+            
+            if limit > 0:
+                percent_used = min((spent / limit) * 100, 100)
+            else:
+                percent_used = 0
+
+            percent_remains = max(100 - percent_used, 0)
+
+            result.append({
+                "id": budget.id,
+                "category": {
+                    "id": budget.category.id,
+                    "name": budget.category.name
+                },
+                "budget": budget.monthly_limit,
+                "spent": spent,
+                "remaining": remaining,
+                "percent_used": round(percent_used, 2),
+                "percent_remains": round(percent_remains, 2),
+                "over_budget": spent > budget.monthly_limit
+            })
+
+        return Response(result)
+
+    def post(self, request):
+        serializer = CategoryBudgetSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Budget saved"}, status=201)
+        return Response(serializer.errors, status=400)
+    
+    # UPDATE
+
+    def put(self, request, id):
+
+        try:
+            categorybudget = CategoryBudget.objects.get(id=id, user=request.user)
+        except CategoryBudget.DoesNotExist:
+            return Response({"error": "Category Budget not found"}, status=404)
+
+        serializer = CategoryBudgetSerializer(categorybudget, data=request.data, partial=True, context={"request": request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Category Budget updated successfully"})
+        return Response(serializer.errors, status=400)
+    
+    # DELETE
+
+    def delete(self, request, id):
+
+        try:
+            categorybudget = CategoryBudget.objects.get(id=id, user=request.user)
+        except CategoryBudget.DoesNotExist:
+            return Response({"error": "Category Budget not found"}, status=404)
+
+        categorybudget.delete()
+        return Response({"message": "Category Budget deleted successfully"})

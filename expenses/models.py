@@ -77,3 +77,22 @@ class Expense(models.Model):
     def __str__(self):
         return f"{self.category} - {self.amount}"
 
+#  Category Budget
+
+class CategoryBudget(models.Model):
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+
+    monthly_limit = models.DecimalField(max_digits=10, decimal_places=2)
+
+    year = models.IntegerField()
+    month = models.IntegerField()  # 1–12
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "category", "year", "month")
+
+    def __str__(self):
+        return f"{self.category.name} - {self.month}/{self.year}"

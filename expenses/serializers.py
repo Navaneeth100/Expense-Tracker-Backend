@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Category, PaymentMethod, IncomeType, Expense
+from .models import Category, PaymentMethod, IncomeType, Expense, CategoryBudget
 
 User = get_user_model()
 
@@ -136,6 +136,47 @@ class ExpenseSerializer(serializers.ModelSerializer):
             instance.payment_method = PaymentMethod.objects.get(id=payment_method_id)
 
         # update normal fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance
+
+#  Category Budget
+
+from datetime import date
+
+class CategoryBudgetSerializer(serializers.ModelSerializer):
+
+    category = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        model = CategoryBudget
+        fields = [
+            "id",
+            "category",
+            "monthly_limit",
+        ]
+
+    def create(self, validated_data):
+        category_id = validated_data.pop("category")
+        category = Category.objects.get(id=category_id)
+        user = self.context["request"].user
+        today = date.today()
+
+        return CategoryBudget.objects.create(
+            category=category,
+            user=user,
+            month=today.month,
+            year=today.year,
+            **validated_data
+        )
+
+    def update(self, instance, validated_data):
+        if "category" in validated_data:
+            category_id = validated_data.pop("category")
+            instance.category = Category.objects.get(id=category_id)
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
