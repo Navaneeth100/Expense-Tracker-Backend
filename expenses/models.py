@@ -9,6 +9,14 @@ class Category(models.Model):
 
     def __str__(self):
         return f"{self.icon} {self.name}"
+
+class SubCategory(models.Model):
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, unique=True)
+    icon = models.CharField(max_length=30, default="❔")  # emoji or text icon
+
+    def __str__(self):
+        return f"{self.icon} {self.name}"
     
 class PaymentMethod(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -45,6 +53,13 @@ class Expense(models.Model):
 
     category = models.ForeignKey(
         "Category",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    subcategory = models.ForeignKey(
+        "SubCategory",
         on_delete=models.SET_NULL,
         null=True,
         blank=True

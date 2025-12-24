@@ -4,11 +4,13 @@ from django.shortcuts import render
 
 from rest_framework import viewsets, permissions
 from .models import Category
+from .models import SubCategory
 from .models import PaymentMethod
 from .models import IncomeType
 from .models import Expense
 from .models import CategoryBudget
 from .serializers import CategorySerializer
+from .serializers import SubCategorySerializer
 from .serializers import PaymentMethodSerializer
 from .serializers import IncomeTypeSerializer
 from .serializers import ExpenseSerializer
@@ -22,6 +24,61 @@ class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all().order_by("name")
     serializer_class = CategorySerializer
     permission_classes = [permissions.IsAuthenticated]  
+
+class SubCategoryAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    # GET all OR GET by category_id
+
+    def get(self, request, id=None):
+
+        if id is not None:
+
+            # GET /sub-categories/<id>/
+            subs = SubCategory.objects.filter(category_id=id).order_by("name")
+
+        else:
+
+            # GET /sub-categories/
+            subs = SubCategory.objects.all().order_by("name")
+
+        serializer = SubCategorySerializer(subs, many=True)
+        return Response(serializer.data)
+
+    # CREATE subcategory
+
+    def post(self, request):
+        serializer = SubCategorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Sub-category created"}, status=201)
+        return Response(serializer.errors, status=400)
+
+    # UPDATE subcategory
+
+    def put(self, request, id):
+        try:
+            sub = SubCategory.objects.get(id=id)
+        except SubCategory.DoesNotExist:
+            return Response({"error": "Sub-category not found"}, status=404)
+
+        serializer = SubCategorySerializer(sub, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Updated successfully"})
+        return Response(serializer.errors, status=400)
+
+    # DELETE subcategory
+
+    def delete(self, request, id):
+        try:
+            sub = SubCategory.objects.get(id=id)
+        except SubCategory.DoesNotExist:
+            return Response({"error": "Sub-category not found"}, status=404)
+
+        sub.delete()
+        return Response({"message": "Deleted successfully"}) 
+
 
 class PaymentMethodViewSet(viewsets.ModelViewSet):
     queryset = PaymentMethod.objects.all().order_by("name")

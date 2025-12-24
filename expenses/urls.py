@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 from .views import CategoryViewSet
+from .views import SubCategoryAPI
 from .views import PaymentMethodViewSet
 from .views import IncomeTypeAPI
 from .views import ExpenseAPI
@@ -14,6 +15,8 @@ router.register("payment-method", PaymentMethodViewSet, basename="payment-method
 
 
 urlpatterns = [
+    path("sub-categories/",SubCategoryAPI.as_view(), name="sub-categories"),
+    path("sub-categories/<int:id>/", SubCategoryAPI.as_view()),
     path("income-type/", IncomeTypeAPI.as_view(), name="income-type"),
     path("expense/", ExpenseAPI.as_view(), name="expense"),
     path("expense/<int:id>/", ExpenseAPI.as_view(), name="expense_detail"),
