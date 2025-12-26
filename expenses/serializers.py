@@ -117,20 +117,20 @@ class ExpenseSerializer(serializers.ModelSerializer):
 
         if trx == "Income":
             if not data.get("income_type"):
-                raise serializers.ValidationError({"income_type": "income_type required for Income"})
+                raise serializers.ValidationError({"error": "income_type required for Income"})
             data["category"] = None
 
         elif trx == "Expense":
             if not data.get("category"):
-                raise serializers.ValidationError({"category": "category required for Expense"})
+                raise serializers.ValidationError({"error": "category required for Expense"})
             
             if not data.get("subcategory"):
-                raise serializers.ValidationError({"subcategory": "Sub-category is required for Expense"})
+                raise serializers.ValidationError({"error": "Sub-category is required for Expense1"})
 
             data["income_type"] = None
 
         else:
-            raise serializers.ValidationError({"transaction_type": "Invalid type (Income / Expense only)"})
+            raise serializers.ValidationError({"error": "Invalid type (Income / Expense only)"})
 
         return data
 
@@ -160,6 +160,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         category_id = validated_data.pop("category", None)
+        subcategory_id = validated_data.pop("subcategory", None)
         income_type_id = validated_data.pop("income_type", None)
         payment_method_id = validated_data.pop("payment_method", None)
 
@@ -174,6 +175,8 @@ class ExpenseSerializer(serializers.ModelSerializer):
         # convert IDs → instances
         if category_id:
             instance.category = Category.objects.get(id=category_id)
+        if subcategory_id:
+            instance.subcategory = SubCategory.objects.get(id=subcategory_id)
         if income_type_id:
             instance.income_type = IncomeType.objects.get(id=income_type_id)
         if payment_method_id:
